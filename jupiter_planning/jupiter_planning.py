@@ -8,7 +8,8 @@ import astropy.units as u
 
 
 def parse_occ(file):
-
+    '''Parse the occultation file that you generated usisng the orbit_model/occ script'''
+    
     df = pd.read_csv(file, delim_whitespace=True, header=None, skiprows=6,
                      names = ['ingress', 'ingress_ang', 'midpoint_eng', 'midpoint_ang',
                               'egress', 'egress_ang'])
@@ -26,23 +27,69 @@ def parse_occ(file):
             df.loc[ind+1, ('ingress')],
             '%Y:%j:%H:%M:%S')
     
-    df2 = df.loc[0:len(df)-2, ('visible', 'occulted')]
-    return df2
+    orbits = df.loc[0:len(df)-2, ('visible', 'occulted')]
+    return orbits
     
 
-def get_jupiter_radec(orbits, outfile=None, show=False):
+def get_jupiter_radec(orbits, outfile=None,load_path=None, show=False,
+    parallax_correction=False):
+    '''Get the position of Jupiter at the specified time
+    
+    Takes output of parse_occ as input.
+    
+    Requires Astropy, and SkyField
+    
+    Optional:
+    
+    load_path (where the bsp and SkyField data files are found.
+    
+    outfile (where you want the output to go)
+    
+    show (report the output). Always True if you don't specify outfile
+    
+    parllax_correction (apply the parallax correction from NuSTAR's orbit).
+        Requries nustar_pysolar for IO routines.
+        Downloads the latest TLE archive from the NuSTAR SOC.
+    
+    Always reports the amount of time that you've accumulated.
+    
+        
+    '''
+    
+    if outfile is None and show is False:
+        show=True
+        
+    from skyfield.api import Loader, EarthSatellite
+
+    if load_path is None:
+        load_path = '../data'
+        load=Loader(load_path)
+    else:
+        load=Loader(load_path)
+
+    planets = load('jup310.bsp')
+    jupiter, earth = planets['jupiter'], planets['earth']
+    ts = load.timescale()
+
+    if parallax_correction is False:
+        observer = earth
+    else:
+        import nustar_pysolar.io as io        
+        start_date = orbits.loc[0, 'visible']
+
+        utc = Time(start_date)
+        tlefile = io.download_tle(outdir=load_path)
+        mindt, line1, line2 = io.get_epoch_tle(utc, tlefile)
+        nustar = EarthSatellite(line1, line2)
+        observer = earth + nustar
+
 
     dt = 0.
     if outfile is not None:
         f = open(outfile, 'w')
+        f.write('Arrive Time          RA                  Dec\n')
 
 
-    from skyfield.api import Loader
-    load = Loader('../data')
-
-    ts = load.timescale()
-    planets = load('jup310.bsp')
-    jupiter, earth = planets['jupiter'], planets['earth']
 
     if show is True:
         print('Aim Time            RA                  Dec')
@@ -58,8 +105,27 @@ def get_jupiter_radec(orbits, outfile=None, show=False):
     
         t = ts.from_astropy(astro_time)
         
-        astrometric = earth.at(t).observe(jupiter)
+        astrometric = observer.at(t).observe(jupiter)
         ra, dec, distance = astrometric.radec()
+
+
+        if show is True and parallax_correction is True:
+            from astropy.coordinates import SkyCoord
+            
+            radeg = ra.to(u.deg)
+            decdeg = dec.to(u.deg)
+            skyfield_ephem = SkyCoord(radeg, decdeg)
+            geocentric = earth.at(t).observe(jupiter)
+            skyfield_ephem = SkyCoord(radeg, decdeg)
+            ra2, dec2, distance2 = geocentric.radec()
+            ra2deg = ra2.to(u.deg)
+            dec2deg = dec2.to(u.deg)
+
+            geo_ephem = SkyCoord(ra2deg, dec2deg)
+            print("Parallax corection (arcsec) {}".format(
+                skyfield_ephem.separation(geo_ephem).arcsec))
+
+
         radeg = ra.to(u.deg)
         decdeg = dec.to(u.deg)
 
