@@ -31,38 +31,43 @@ def parse_occ(file):
     return orbits
     
 
+def get_lunar_radec(tstart, tend, outfile=None,load_path=None, show=False,
+    parallax_correction=False, steps=5):
+    '''Get the position of Moon during an orbit.
+    
+    
+    Inputs:
+    -------
+    
+    tstart (datetime object): Start of the orbit
+    
+    tend (datetime object): End of the orbit
 
+    steps (5.0): Number of steps to split the orbit up into. Does it evenly right now.
 
-
-def get_lunar_radec(orbit, outfile=None,load_path=None, show=False,
-    parallax_correction=False):
-    '''Get the position of Jupiter at the specified time
-    
-    Takes an orbit start/stop time as input.
-    
-    Requires Astropy, and SkyField
-    
-    Optional:
-    
-    load_path (where the bsp and SkyField data files are found.
-    
-    outfile (where you want the output to go)
-    
-    show (report the output). Always True if you don't specify outfile
-    
-    parllax_correction (apply the parallax correction from NuSTAR's orbit).
+    parallax_correction (False): Use the correction for orbital parallax of NuSTAR.
         Requries nustar_pysolar for IO routines.
         Downloads the latest TLE archive from the NuSTAR SOC.
     
-    Always reports the amount of time that you've accumulated.
+    load_path (None): Location to store the SkyField datafiles.
     
-        
+    outfile (None): Location to store the pointing positions and times.
+    
+    show (None): Write output. Only used if outfile is not None.
+
+    
+    Requires Astropy, and SkyField
+            
     '''
     
     if outfile is None and show is False:
         show=True
-        
+    
+    
+    
     from skyfield.api import Loader, EarthSatellite
+    from datetime import timedelta
+    
 
     if load_path is None:
         load_path = '../data'
@@ -70,45 +75,41 @@ def get_lunar_radec(orbit, outfile=None,load_path=None, show=False,
     else:
         load=Loader(load_path)
 
-    planets = load('jup310.bsp')
-    jupiter, earth = planets['jupiter'], planets['earth']
+    planets = load('de436.bsp')
+    moon, earth = planets['moon'], planets['earth']
     ts = load.timescale()
 
     if parallax_correction is False:
         observer = earth
     else:
         import nustar_pysolar.io as io        
-        start_date = orbits.loc[0, 'visible']
 
-        utc = Time(start_date)
+        utc = Time(tstart)
         tlefile = io.download_tle(outdir=load_path)
         mindt, line1, line2 = io.get_epoch_tle(utc, tlefile)
         nustar = EarthSatellite(line1, line2)
         observer = earth + nustar
 
 
-    dt = 0.
     if outfile is not None:
         f = open(outfile, 'w')
         f.write('Arrive Time          RA                  Dec\n')
 
 
-
     if show is True:
         print('Aim Time            RA                  Dec')
 
-    for ind in range(len(orbits)):
-        tstart = orbits.loc[ind, 'visible']
-        tend = orbits.loc[ind, 'occulted']
-        on_time = (tend - tstart).total_seconds()
     
-        point_time = tstart + 0.5*(tend - tstart)
+    dt = ( (tend - tstart).total_seconds() ) / steps
+    for i in range(steps):
+        point_time = tstart + timedelta(seconds=dt * i)
+    
     
         astro_time = Time(point_time)
     
         t = ts.from_astropy(astro_time)
         
-        astrometric = observer.at(t).observe(jupiter)
+        astrometric = observer.at(t).observe(moon) 
         ra, dec, distance = astrometric.radec()
 
 
@@ -118,7 +119,7 @@ def get_lunar_radec(orbit, outfile=None,load_path=None, show=False,
             radeg = ra.to(u.deg)
             decdeg = dec.to(u.deg)
             skyfield_ephem = SkyCoord(radeg, decdeg)
-            geocentric = earth.at(t).observe(jupiter)
+            geocentric = earth.at(t).observe(moon)
             skyfield_ephem = SkyCoord(radeg, decdeg)
             ra2, dec2, distance2 = geocentric.radec()
             ra2deg = ra2.to(u.deg)
@@ -132,15 +133,136 @@ def get_lunar_radec(orbit, outfile=None,load_path=None, show=False,
         radeg = ra.to(u.deg)
         decdeg = dec.to(u.deg)
 
-        dt += on_time
 
         if show is True:
-            print(tstart.isoformat()+' {}  {}'.format(radeg.value, decdeg.value))
+            print(point_time.isoformat()+' {}  {}'.format(radeg.value, decdeg.value))
+            print()
 
         if outfile is not None:
-            f.write(tstart.isoformat()+' {}  {}'.format(radeg.value, decdeg.value)+'\n')
-    
+            f.write(point_time.isoformat()+' {}  {}'.format(radeg.value,decdeg.value)+'\n')
+
     if outfile is not None:
         f.close()
     
-    print('Total accumualted time {}'.format(dt))
+    return
+    
+
+# def get_lunar_steps(tstart, tend, outfile=None,load_path=None, show=False,
+#     parallax_correction=False, max_move=2):
+#     '''Get the slews you have to do to prevent the moon from moving too far.
+#     
+#     
+#     Inputs:
+#     -------
+#     
+#     tstart (datetime object): Start of the orbit
+#     
+#     tend (datetime object): End of the orbit
+# 
+#     max_move (2.0): Maximum motion (in arcminutes)
+# 
+#     
+#     load_path (None): Location to store the SkyField datafiles.
+#     
+#     outfile (None): Location to store the pointing positions and times.
+#     
+#     show (None): Write output to a file. Only used if outfile is not None.
+#     
+#     
+#     Notes:
+#     ----
+#     
+#     Requires Astropy, and SkyField
+#     
+#     Use the correction for orbital parallax of NuSTAR.
+#         Requries nustar_pysolar for IO routines.
+#         Downloads the latest TLE archive from the NuSTAR SOC.
+#             
+#     '''
+#     
+#     if outfile is None and show is False:
+#         show=True
+#     
+#     from skyfield.api import Loader, EarthSatellite
+#     from datetime import timedelta
+#     
+# 
+#     if load_path is None:
+#         load_path = '../data'
+#         load=Loader(load_path)
+#     else:
+#         load=Loader(load_path)
+# 
+#     planets = load('de436.bsp')
+#     moon, earth = planets['moon'], planets['earth']
+#     ts = load.timescale()
+# 
+#     if parallax_correction is False:
+#         observer = earth
+#     else:
+#         import nustar_pysolar.io as io        
+# 
+#         utc = Time(tstart)
+#         tlefile = io.download_tle(outdir=load_path)
+#         mindt, line1, line2 = io.get_epoch_tle(utc, tlefile)
+#         nustar = EarthSatellite(line1, line2)
+#         observer = earth + nustar
+# 
+# 
+#     if outfile is not None:
+#         f = open(outfile, 'w')
+#         f.write('Arrive Time          RA                  Dec\n')
+# 
+# 
+#     if show is True:
+#         print('Aim Time            RA                  Dec')
+# 
+#     
+# 
+#     
+#     
+#     dt = ( (tend - tstart).total_seconds() ) / steps
+#     for i in range(steps):
+#         point_time = tstart + timedelta(seconds=dt * i)
+#     
+#     
+#         astro_time = Time(point_time)
+#     
+#         t = ts.from_astropy(astro_time)
+#         
+#         astrometric = observer.at(t).observe(moon) `
+#         ra, dec, distance = astrometric.radec()
+# 
+# 
+#         if show is True and parallax_correction is True:
+#             from astropy.coordinates import SkyCoord
+#             
+#             radeg = ra.to(u.deg)
+#             decdeg = dec.to(u.deg)
+#             skyfield_ephem = SkyCoord(radeg, decdeg)
+#             geocentric = earth.at(t).observe(moon)
+#             skyfield_ephem = SkyCoord(radeg, decdeg)
+#             ra2, dec2, distance2 = geocentric.radec()
+#             ra2deg = ra2.to(u.deg)
+#             dec2deg = dec2.to(u.deg)
+# 
+#             geo_ephem = SkyCoord(ra2deg, dec2deg)
+#             print("Parallax corection (arcsec) {}".format(
+#                 skyfield_ephem.separation(geo_ephem).arcsec))
+# 
+# 
+#         radeg = ra.to(u.deg)
+#         decdeg = dec.to(u.deg)
+# 
+# 
+#         if show is True:
+#             print(point_time.isoformat()+' {}  {}'.format(radeg.value, decdeg.value))
+#             print()
+# 
+#         if outfile is not None:
+#             f.write(point_time.isoformat()+' {}  {}'.format(radeg.value,decdeg.value)+'\n')
+# 
+#     if outfile is not None:
+#         f.close()
+#     
+#     return
