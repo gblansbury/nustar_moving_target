@@ -76,7 +76,7 @@ def get_lunar_radec(tstart, tend, outfile=None,load_path=None, show=False,
         load=Loader(load_path)
 
     planets = load('de436.bsp')
-    moon, earth = planets['moon'], planets['earth']
+    moon, earth, venus = planets['moon'], planets['earth'], planets['venus']
     ts = load.timescale()
 
     if parallax_correction is False:
@@ -93,7 +93,7 @@ def get_lunar_radec(tstart, tend, outfile=None,load_path=None, show=False,
 
     if outfile is not None:
         f = open(outfile, 'w')
-        f.write('Arrive Time          RA                  Dec\n')
+        f.write('Aim Time          RA                  Dec\n')
 
 
     if show is True:
@@ -128,6 +128,16 @@ def get_lunar_radec(tstart, tend, outfile=None,load_path=None, show=False,
             geo_ephem = SkyCoord(ra2deg, dec2deg)
             print("Parallax corection (arcsec) {}".format(
                 skyfield_ephem.separation(geo_ephem).arcsec))
+            
+            venus_obs = observer.at(t).observe(venus) 
+            ra2, dec2, distance2 = geocentric.radec()
+            ra2deg = ra2.to(u.deg)
+            dec2deg = dec2.to(u.deg)
+
+            geo_ephem = SkyCoord(ra2deg, dec2deg)
+            print("Offset to Venus (deg) {}".format(
+                skyfield_ephem.separation(geo_ephem).deg))
+            
 
 
         radeg = ra.to(u.deg)
