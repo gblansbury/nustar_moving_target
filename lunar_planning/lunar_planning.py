@@ -77,6 +77,7 @@ def get_lunar_radec(tstart, tend, outfile=None,load_path=None, show=False,
 
     planets = load('de436.bsp')
     moon, earth, venus = planets['moon'], planets['earth'], planets['venus']
+    uranus = planets['uranus_barycenter']
     ts = load.timescale()
 
     if parallax_correction is False:
@@ -130,7 +131,7 @@ def get_lunar_radec(tstart, tend, outfile=None,load_path=None, show=False,
                 skyfield_ephem.separation(geo_ephem).arcsec))
             
             venus_obs = observer.at(t).observe(venus) 
-            ra2, dec2, distance2 = geocentric.radec()
+            ra2, dec2, distance2 = venus_obs.radec()
             ra2deg = ra2.to(u.deg)
             dec2deg = dec2.to(u.deg)
 
@@ -138,6 +139,14 @@ def get_lunar_radec(tstart, tend, outfile=None,load_path=None, show=False,
             print("Offset to Venus (deg) {}".format(
                 skyfield_ephem.separation(geo_ephem).deg))
             
+#             uranus_obs = observer.at(t).observe(uranus) 
+#             ra2, dec2, distance2 = uranus_obs.radec()
+#             ra2deg = ra2.to(u.deg)
+#             dec2deg = dec2.to(u.deg)
+# 
+#             geo_ephem = SkyCoord(ra2deg, dec2deg)
+#             print("Offset to Uranus (deg) {}".format(
+#                 skyfield_ephem.separation(geo_ephem).deg))
 
 
         radeg = ra.to(u.deg)
