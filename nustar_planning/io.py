@@ -39,9 +39,7 @@ def download_tle(outdir='./'):
     if (os.path.isfile(outfile)):
         os.remove(outfile)
     
-    
     wget.download(url, out=outfile)
-    
     
     return outfile
 
@@ -104,3 +102,34 @@ def get_epoch_tle(epoch, tlefile):
     good_line2 = line2[min_ind]
 
     return mindt, good_line1, good_line2
+
+
+
+
+
+def parse_occ(file):
+    import pandas as pd
+    from datetime import datetime
+
+
+    '''Parse the occultation file that you generated usisng the orbit_model/occ script'''
+    
+    df = pd.read_csv(file, delim_whitespace=True, header=None, skiprows=6,
+                     names = ['ingress', 'ingress_ang', 'midpoint_eng', 'midpoint_ang',
+                              'egress', 'egress_ang'])
+
+    df['visible'] = df['egress']
+    df['occulted'] = df['egress']
+
+    for ind in range(len(df)):
+        if ind == len(df) -1:
+            break
+        df.loc[ind,('visible')] = datetime.strptime(
+                df.loc[ind, ('egress')],
+                '%Y:%j:%H:%M:%S')
+        df.loc[ind,('occulted')] = datetime.strptime(
+            df.loc[ind+1, ('ingress')],
+            '%Y:%j:%H:%M:%S')
+    
+    orbits = df.loc[0:len(df)-2, ('visible', 'occulted')]
+    return orbits
