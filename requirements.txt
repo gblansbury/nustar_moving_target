@@ -1,0 +1,8 @@
+numpy
+scipy
+matplotlib
+sunpy
+wget=2.2
+sphinx=1.5.6
+skyfield
+pandas

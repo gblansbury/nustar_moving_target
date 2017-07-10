@@ -1,0 +1,31 @@
+[build_sphinx]
+source-dir = docs
+build-dir = docs/_build
+all_files = 1
+
+[upload_docs]
+upload-dir = docs/_build/html
+show-response = 1
+
+[tool:pytest]
+minversion = 2.2
+norecursedirs = build docs/_build
+addopts = --verbose
+doctest_plus = enabled
+
+[ah_bootstrap]
+auto_use = True
+
+[metadata]
+package_name = nustar_moving_target
+description = NuSTAR code for converting planning moving target observations
+long_description = This relies on Astropy
+author = Brian Grefenstette
+author_email = bwgref@srl.caltech.edu
+license = MIT
+url = https://github.com/nustar/nustar_moving_target
+edit_on_github = False
+github_project = NuSTAR/nustar_moving_target
+
+#[entry_points]
+#astropy-package-template-example = packagename.example_mod:main

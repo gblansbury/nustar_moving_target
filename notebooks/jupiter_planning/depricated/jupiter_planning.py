@@ -6,29 +6,29 @@ from astropy.time import Time
 
 import astropy.units as u
 
-
-def parse_occ(file):
-    '''Parse the occultation file that you generated usisng the orbit_model/occ script'''
-    
-    df = pd.read_csv(file, delim_whitespace=True, header=None, skiprows=6,
-                     names = ['ingress', 'ingress_ang', 'midpoint_eng', 'midpoint_ang',
-                              'egress', 'egress_ang'])
-
-    df['visible'] = df['egress']
-    df['occulted'] = df['egress']
-
-    for ind in range(len(df)):
-        if ind == len(df) -1:
-            break
-        df.loc[ind,('visible')] = datetime.strptime(
-                df.loc[ind, ('egress')],
-                '%Y:%j:%H:%M:%S')
-        df.loc[ind,('occulted')] = datetime.strptime(
-            df.loc[ind+1, ('ingress')],
-            '%Y:%j:%H:%M:%S')
-    
-    orbits = df.loc[0:len(df)-2, ('visible', 'occulted')]
-    return orbits
+# 
+# def parse_occ(file):
+#     '''Parse the occultation file that you generated usisng the orbit_model/occ script'''
+#     
+#     df = pd.read_csv(file, delim_whitespace=True, header=None, skiprows=6,
+#                      names = ['ingress', 'ingress_ang', 'midpoint_eng', 'midpoint_ang',
+#                               'egress', 'egress_ang'])
+# 
+#     df['visible'] = df['egress']
+#     df['occulted'] = df['egress']
+# 
+#     for ind in range(len(df)):
+#         if ind == len(df) -1:
+#             break
+#         df.loc[ind,('visible')] = datetime.strptime(
+#                 df.loc[ind, ('egress')],
+#                 '%Y:%j:%H:%M:%S')
+#         df.loc[ind,('occulted')] = datetime.strptime(
+#             df.loc[ind+1, ('ingress')],
+#             '%Y:%j:%H:%M:%S')
+#     
+#     orbits = df.loc[0:len(df)-2, ('visible', 'occulted')]
+#     return orbits
     
 
 def get_jupiter_radec(orbits, outfile=None,load_path=None, show=False,
@@ -62,7 +62,7 @@ def get_jupiter_radec(orbits, outfile=None,load_path=None, show=False,
     from skyfield.api import Loader, EarthSatellite
 
     if load_path is None:
-        load_path = '../data'
+        load_path = './'
         load=Loader(load_path)
     else:
         load=Loader(load_path)
