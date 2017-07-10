@@ -82,6 +82,7 @@ def position(orbits, outfile=None,load_path=None, show=False,
    
     '''
     from astropy.time import Time
+    from datetime import timedelta
     import astropy.units as u
     
 
@@ -117,7 +118,7 @@ def position(orbits, outfile=None,load_path=None, show=False,
             t = ts.from_astropy(astro_time)
         
         # Get the coordinates.
-            astrometric = observer.at(t).observe(jupiter)
+            astrometric = observer.at(t).observe(moon)
             ra, dec, distance = astrometric.radec()
 
         # Store output in degrees
