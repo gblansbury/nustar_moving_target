@@ -49,12 +49,13 @@ to worry about overwriting or conflicting with any other existing python builds.
 we're using python 3-5 and that we have the conda-forge channel installed (for sunpy):
 
 > `conda install python=3.5`
+
 > `conda config --add channels conda-forge`
 
 #### Install nustar_pysolar
 
 ##### Clone the project from github:
-> `git clone https://github.com/NuSTAR/nsutar_moving_target.git`
+> `git clone https://github.com/NuSTAR/nustar_moving_target.git`
 
 ##### Install dependencies:
 
