@@ -127,10 +127,10 @@ def position(orbits, outfile=None,load_path=None, show=False,
 
 
             if show is True:
-                print(tstart.isoformat()+' {:.5f}  {:.5f}'.format(radeg.value, decdeg.value))
+                print(point_time.isoformat()+' {:.5f}  {:.5f}'.format(radeg.value, decdeg.value))
 
             if outfile is not None:
-                f.write(tstart.isoformat()+' {:.5f}  {:.5f}'.format(radeg.value, decdeg.value)+'\n')
+                f.write(point_time.isoformat()+' {:.5f}  {:.5f}'.format(radeg.value, decdeg.value)+'\n')
     
     if outfile is not None:
         f.close()
