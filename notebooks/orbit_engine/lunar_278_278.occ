@@ -1,0 +1,6 @@
+;File: lunar_278_278.occ
+;Input: RA 8.2302 Dec -0.351 TLE Latest_TLE.txt start time 2017:278:00:00:00 end time 2017:278:00:00:00
+;Earth Limb Angle: 10 degrees
+;Fields: ingress_eng ingress_ang midpoint_eng midpoint_ang egress_eng egress_ang
+;Units: '' '' '' '' '' ''
+;Types: 17A D 17A D 17A D

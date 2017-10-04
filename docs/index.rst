@@ -1,12 +1,14 @@
-Welcome to NuSTAR_Pysolar's documentation
-===================================
+Welcome to the documentation for NuSTAR's moving target planning
+================================================================
 
 Contents:
 
 .. toctree::
    :maxdepth: 2
 
-    io
+   io
+   lunar_planning
+   jupiter_planning
 
 Indices and tables
 ==================

@@ -1,6 +1,6 @@
 NuSTAR Python Subtroutines for easy I/O
 ============
 
-.. automodule:: nustar_moving.io
+.. automodule:: nustar_planning.io
    :members:
    :undoc-members:
