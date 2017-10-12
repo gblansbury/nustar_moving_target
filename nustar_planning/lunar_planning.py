@@ -271,10 +271,10 @@ def position_shift(orbits, outfile=None,load_path=None, show=True,
                     
                                        
                     if show is True:
-                        print(last_time.isoformat()+' RA: {:.5f}  Dec: {:.5f}'.format(ra_point.value, dec_point.value))
+                        print(last_time.strftime('%Y:%j:%H:%M:%S')+' RA: {:.5f}  Dec: {:.5f}'.format(ra_point.value, dec_point.value))
 
                     if outfile is not None:
-                        f.write(last_time.isoformat()+' {:.5f}  {:.5f}'.format(ra_point.value, dec_point.value)+'\n')
+                        f.write(last_time.strftime('%Y:%j:%H:%M:%S')+' {:.5f}  {:.5f}'.format(ra_point.value, dec_point.value)+'\n')
 
                     print('')
                     # Copy over for next dwell computation
