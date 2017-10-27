@@ -161,12 +161,18 @@ def position_shift(orbits, outfile=None,load_path=None, show=True,
         For the Skyfield download files
     parllax_correction: bool
         Apply the NuSTAR parallax corrections (True)
-    min_dwell: float with Astropy units
+    min_dwell: float with Astropy time units
         Minimum amount of time to dwell at each position. Default is 0*u.s
-    min_shift: float with Astropy units
+    min_shift: float with Astropy angle units
         Shift when the Moons move this much. Default is 360*u.arcsec
+    pad_time: float with Astropy time units
+        Extends the orbit from the occultation file by this amount in both directions.
+        Default in 5 minutes.
     pa: float with Astropy units
         Position angle of the NuSTAR FoV. Default is 0*u.deg (co-aligned with North).
+    outfile: string
+        File for ascii output
+    
   
     Returns
     -------
@@ -188,14 +194,15 @@ def position_shift(orbits, outfile=None,load_path=None, show=True,
     pa = kwargs.get('pa', 0*u.deg)
     pa = pa + np.pi * u.rad
     dt = kwargs.get('dt', 5.0*u.s)
-    
+    diag = kwargs.get('diag', False)
+    pad_time = kwargs.get('pad_time', 5*u.min)
 #     if outfile is None and show is False:
 #         show=True
 #     
-#     if outfile is not None:
-#         f = open(outfile, 'w')
-#         f.write('Aim Time            RA        Dec\n')
-# 
+    if outfile is not None:
+        f = open(outfile, 'w')
+        f.write('Arrive By            RA        Dec\n')
+
 
     observer, moon, ts = init_ephem(orbits,
         load_path=load_path, show=show,
@@ -204,11 +211,15 @@ def position_shift(orbits, outfile=None,load_path=None, show=True,
 #    if show is True:
 #        print('Aim Time            RA         Dec')
 
+
+
+
     # Loop over every orbit:
     for ind in range(len(orbits)):
 
-        tstart = orbits.loc[ind, 'visible']
-        tend = orbits.loc[ind, 'occulted']
+        tstart = orbits.loc[ind, 'visible'] - timedelta(minutes=pad_time.to(u.min).value)
+        tend = orbits.loc[ind, 'occulted'] + timedelta(minutes=pad_time.to(u.min).value)
+                
         on_time = (tend - tstart).total_seconds()
     
 
@@ -217,7 +228,6 @@ def position_shift(orbits, outfile=None,load_path=None, show=True,
         for i in range(steps):
             point_time = tstart + timedelta(seconds=dt.to(u.s).value * i)
 
-        
             astro_time = Time(point_time)    
             t = ts.from_astropy(astro_time)
         
@@ -235,39 +245,50 @@ def position_shift(orbits, outfile=None,load_path=None, show=True,
             this_point = SkyCoord(radeg, decdeg, unit="deg")
 
             if last_point is not None:
+                
+            
+            
                 dshift = this_point.separation(last_point)
                 dwell = point_time - last_time
                 #                print(dshift.arcsec)
                 if (dshift.arcsec > min_shift.to(u.arcsec).value) & (dwell.seconds > min_dwell.to(u.s).value):
-                    print('Dwell Time (sec): {:.2f} Shift (arcmin): {:.2f}'.format(dwell.seconds, dshift.arcmin))
-                    last_time = point_time
-                    last_point = this_point
-                    dec_point = decdeg + Rmoon.to(u.deg) * np.cos(pa)
-                    ra_point = radeg + Rmoon.to(u.deg) * np.sin(pa) / np.cos(decdeg)
-#                    print(ra_point, dec_point)
+                    
+                    # Aim halfway between the two positions
+                    aim_time = 0.5*(point_time - last_time) + last_time
+                    if diag is True:
+                        print('Start of dwell: '+last_time.isoformat())
+                        print('End of dwell: '+point_time.isoformat())
+                        print('')
+                        print('Time used to aim: '+aim_time.isoformat())
+                        print('Dwell Duration (sec): {:.2f} \n  Dwell Drift (arcmin): {:.2f}'.format(dwell.seconds, dshift.arcmin))
+                        print('')
+                    astrometric_aim = observer.at(t).observe(moon)
+                    ra_aim, dec_aim, distance = astrometric.radec()
+     
+                    
+                    dec_point = dec_aim.to(u.deg) + Rmoon.to(u.deg) * np.cos(pa)
+                    ra_point = ra_aim.to(u.deg) + Rmoon.to(u.deg) * np.sin(pa) / np.cos(dec_aim.to(u.deg))
+                    
+                                       
                     if show is True:
-                        print(point_time.isoformat()+' RA: {:.5f}  Dec: {:.5f}'.format(ra_point.value, dec_point.value))
+                        print(last_time.strftime('%Y:%j:%H:%M:%S')+' RA: {:.5f}  Dec: {:.5f}'.format(ra_point.value, dec_point.value))
 
                     if outfile is not None:
-                        f.write(point_time.isoformat()+' {:.5f}  {:.5f}'.format(ra_point.value, dec_point.value)+'\n')
+                        f.write(last_time.strftime('%Y:%j:%H:%M:%S')+' {:.5f}  {:.5f}'.format(ra_point.value, dec_point.value)+'\n')
 
                     print('')
-#                    print(radeg, decdeg)
-                    #break
+                    # Copy over for next dwell computation
+                    last_time = point_time
+                    last_point = this_point
+
                     
             else:
-                if show is True:
-                    dec_point = decdeg + Rmoon.to(u.deg) * np.cos(pa)
-                    ra_point = radeg + Rmoon.to(u.deg) * np.sin(pa) / np.cos(decdeg)
-                    print("First position:")
-                    print(point_time.isoformat()+' RA: {:.5f}  Dec: {:.5f}'.format(ra_point.value, dec_point.value))
-
                 last_point = this_point
                 last_time = point_time
                 
             
-            
         print('')
+        
     if outfile is not None:
         f.close()
     
