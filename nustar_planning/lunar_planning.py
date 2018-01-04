@@ -140,7 +140,7 @@ def position(orbits, outfile=None,load_path=None, show=False,
     
 
 
-def position_shift(orbits, outfile=None,load_path=None, show=True,
+def position_shift(orbits, outfile=None,load_path=None, show=False,
     parallax_correction=True, **kwargs):
     """Get the pointing position for the lunar limb observations.
 
@@ -272,11 +272,12 @@ def position_shift(orbits, outfile=None,load_path=None, show=True,
                                        
                     if show is True:
                         print(last_time.strftime('%Y:%j:%H:%M:%S')+' RA: {:.5f}  Dec: {:.5f}'.format(ra_point.value, dec_point.value))
+                        print('')
+
 
                     if outfile is not None:
                         f.write(last_time.strftime('%Y:%j:%H:%M:%S')+' {:.5f}  {:.5f}'.format(ra_point.value, dec_point.value)+'\n')
 
-                    print('')
                     # Copy over for next dwell computation
                     last_time = point_time
                     last_point = this_point
@@ -285,10 +286,7 @@ def position_shift(orbits, outfile=None,load_path=None, show=True,
             else:
                 last_point = this_point
                 last_time = point_time
-                
-            
-        print('')
-        
+                       
     if outfile is not None:
         f.close()
     
