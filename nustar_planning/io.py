@@ -133,3 +133,24 @@ def parse_occ(file):
     
     orbits = df.loc[0:len(df)-2, ('visible', 'occulted')]
     return orbits
+    
+
+def parse_pa(file):
+    '''Parse the output PA string that you generated usisng the orbit_model/occ script
+    
+    This should have exactly one line of the format: 
+    
+    Position angle: 43.608806 [deg]
+    
+    '''
+    
+    f = open(file)
+    for line in f:
+        fields = line.split()
+        mps_pa = float(fields[2])
+    
+    # Remember that the mission planning PA is 180 degrees off from the SKY PA:
+    
+    sky_pa = 180 - mps_pa
+        
+    return sky_pa
