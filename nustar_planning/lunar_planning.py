@@ -192,6 +192,7 @@ def position_shift(orbits, outfile=None,load_path=None, show=False,
     min_dwell = kwargs.get('min_dwell', 0*u.s)
     min_shift = kwargs.get('min_shift', 360*u.arcsec)
     pa = kwargs.get('pa', 0*u.deg)
+    # Flip this around so that you're stepping *opposite* to this direction.
     pa = pa + np.pi * u.rad
     dt = kwargs.get('dt', 5.0*u.s)
     diag = kwargs.get('diag', False)
@@ -250,11 +251,13 @@ def position_shift(orbits, outfile=None,load_path=None, show=False,
             
                 dshift = this_point.separation(last_point)
                 dwell = point_time - last_time
-                #                print(dshift.arcsec)
+
+
                 if (dshift.arcsec > min_shift.to(u.arcsec).value) & (dwell.seconds > min_dwell.to(u.s).value):
                     
                     # Aim halfway between the two positions
                     aim_time = 0.5*(point_time - last_time) + last_time
+                    aim_time = point_time
                     if diag is True:
                         print('Start of dwell: '+last_time.isoformat())
                         print('End of dwell: '+point_time.isoformat())
@@ -268,7 +271,8 @@ def position_shift(orbits, outfile=None,load_path=None, show=False,
                     
                     dec_point = dec_aim.to(u.deg) + Rmoon.to(u.deg) * np.cos(pa)
                     ra_point = ra_aim.to(u.deg) + Rmoon.to(u.deg) * np.sin(pa) / np.cos(dec_aim.to(u.deg))
-                    
+     
+     
                                        
                     if show is True:
                         print(last_time.strftime('%Y:%j:%H:%M:%S')+' RA: {:.5f}  Dec: {:.5f}'.format(ra_point.value, dec_point.value))
@@ -284,8 +288,10 @@ def position_shift(orbits, outfile=None,load_path=None, show=False,
 
                     
             else:
+                
                 last_point = this_point
                 last_time = point_time
+
                        
     if outfile is not None:
         f.close()
