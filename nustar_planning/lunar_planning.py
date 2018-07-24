@@ -193,7 +193,10 @@ def position_shift(orbits, outfile=None,load_path=None, show=False,
     min_shift = kwargs.get('min_shift', 360*u.arcsec)
     pa = kwargs.get('pa', 0*u.deg)
     # Flip this around so that you're stepping *opposite* to this direction.
-    pa = pa + np.pi * u.rad
+
+    # Now step *along* this direction. Should put the FoV with Det0 off the top of
+    # the moon.
+    pa = pa #+ np.pi * u.rad
     dt = kwargs.get('dt', 5.0*u.s)
     diag = kwargs.get('diag', False)
     pad_time = kwargs.get('pad_time', 5*u.min)
