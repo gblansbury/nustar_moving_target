@@ -186,6 +186,7 @@ def position_shift(orbits, outfile=None,load_path=None, show=False,
     import astropy.units as u
     import numpy as np
     from astropy.coordinates import SkyCoord
+    import sys
     
     
     Rmoon=kwargs.get('Rmoon', 940*u.arcsec)
@@ -220,9 +221,10 @@ def position_shift(orbits, outfile=None,load_path=None, show=False,
 
     # Loop over every orbit:
     for ind in range(len(orbits)):
-
-        tstart = orbits.loc[ind, 'visible'] - timedelta(minutes=pad_time.to(u.min).value)
-        tend = orbits.loc[ind, 'occulted'] + timedelta(minutes=pad_time.to(u.min).value)
+        
+        # orbits = list with a row for each orbit and two time columns (one for the "visible" time, one for the "occulted" time)
+        tstart = orbits.loc[ind, 'visible'] - timedelta(minutes=pad_time.to(u.min).value) # time moon becomes visible to NuSTAR
+        tend = orbits.loc[ind, 'occulted'] + timedelta(minutes=pad_time.to(u.min).value) # time moon becomes occulted to NuSTAR
                 
         on_time = (tend - tstart).total_seconds()
     
@@ -230,7 +232,9 @@ def position_shift(orbits, outfile=None,load_path=None, show=False,
         steps = int(on_time / dt.to(u.s).value)
         last_point = None        
         for i in range(steps):
-            point_time = tstart + timedelta(seconds=dt.to(u.s).value * i)
+            
+            point_time = tstart + timedelta(seconds=dt.to(u.s).value * i) # tstart + (dt * i steps)
+            # NB: point_time = the time at which the Moon limb will reach the aimpoint of the current dwell ?
 
             astro_time = Time(point_time)    
             t = ts.from_astropy(astro_time)
@@ -238,7 +242,6 @@ def position_shift(orbits, outfile=None,load_path=None, show=False,
         # Get the coordinates.
             astrometric = observer.at(t).observe(moon)
             ra, dec, distance = astrometric.radec()
-
 
 
 
@@ -256,10 +259,11 @@ def position_shift(orbits, outfile=None,load_path=None, show=False,
                 dwell = point_time - last_time
 
 
-                if (dshift.arcsec > min_shift.to(u.arcsec).value) & (dwell.seconds > min_dwell.to(u.s).value):
+                if (dshift.arcsec > min_shift.to(u.arcsec).value) & (dwell.seconds > min_dwell.to(u.s).value): 
+                # i.e., only move on to next steps if min_shift>input value (in arcseconds) and min_dwell>input value (in seconds).
                     
                     # Aim halfway between the two positions
-                    aim_time = 0.5*(point_time - last_time) + last_time
+                    #aim_time = 0.5*(point_time - last_time) + last_time
                     aim_time = point_time
                     if diag is True:
                         print('Start of dwell: '+last_time.isoformat())
@@ -270,6 +274,13 @@ def position_shift(orbits, outfile=None,load_path=None, show=False,
                         print('')
                     astrometric_aim = observer.at(t).observe(moon)
                     ra_aim, dec_aim, distance = astrometric.radec()
+                    # ^^^ equivalent to:
+                    #astrometric_aim = observer.at(ts.from_astropy(Time(point_time))).observe(moon)
+                    #ra_aim, dec_aim, distance = astrometric_aim.radec()
+                    
+                    #astrometric_start = observer.at(ts.from_astropy(Time(last_time))).observe(moon)
+                    #ra_aim, dec_aim, distance = astrometric_aim.radec()
+
      
                     
                     dec_point = dec_aim.to(u.deg) + Rmoon.to(u.deg) * np.cos(pa)
@@ -278,8 +289,8 @@ def position_shift(orbits, outfile=None,load_path=None, show=False,
      
                                        
                     if show is True:
-                        print(last_time.strftime('%Y:%j:%H:%M:%S')+' RA: {:.5f}  Dec: {:.5f}'.format(ra_point.value, dec_point.value))
-                        print('')
+                        print
+                        print('last_time:'+last_time.strftime('%Y:%j:%H:%M:%S')+' point_time:'+point_time.strftime('%Y:%j:%H:%M:%S')+' ra_point,dec_point(moon limb): {:.5f} {:.5f}'.format(ra_point.value, dec_point.value)+' ra_aim,dec_aim(moon center): {:.5f} {:.5f}'.format(ra_aim.to(u.deg).value, dec_aim.to(u.deg).value))
 
 
                     if outfile is not None:
